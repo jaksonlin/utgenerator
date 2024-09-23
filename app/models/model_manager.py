@@ -37,6 +37,8 @@ class ModelManager:
         return all_tests
     
     def generate_basic_test(self, code: str) -> TestCase:
-        return  self.model.generate_test_case(code, TestCaseType.basic)
+        extracted_code = self.model.generate_test_case(code, TestCaseType.basic)
+        return TestCase(type=TestCaseType.basic, content=extracted_code)
+
     
 model_manager = ModelManager()

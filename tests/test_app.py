@@ -14,6 +14,6 @@ def test_generate_unittest(client):
     assert 'unittest' in response.json
     # write to file
     with open('test_generate_unittest.out', 'w') as f:
-        result = response.json['unittest']
+        result = response.json
         f.write(json.dumps(result))
 
