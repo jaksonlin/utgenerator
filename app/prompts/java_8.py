@@ -1,9 +1,19 @@
 from typing import List
-from .prompt_template import PromptTemplate
+from .prompt_manager import PromptManager
+from .testcase_type import TestCaseType
 
-class Java8Prompt(PromptTemplate):
-    PROMPT_TEMPLATES = {
-        "basic": """Generate basic functionality unit tests for the following Java code:
+class Java8Prompt(PromptManager):
+    """
+    This prompt will use JUnit 4 with Mockito 4.8 to generate test cases against Java 8 code.
+    """
+    
+    def __init__(self, language: str):
+        super().__init__(language)
+        self.init_prompt_settings()
+    
+    def init_prompt_settings(self):
+        self.prompt_settings = {
+            TestCaseType.basic: """Generate basic functionality unit tests for the following Java code:
 
     {code}
 
@@ -16,7 +26,7 @@ class Java8Prompt(PromptTemplate):
     6. Verify mock interactions using Mockito's verify() method where relevant.
     """,
 
-        "edge_cases": """Generate edge case unit tests for the following Java code:
+            TestCaseType.edge_cases: """Generate edge case unit tests for the following Java code:
 
     {code}
 
@@ -30,7 +40,7 @@ class Java8Prompt(PromptTemplate):
     7. Consider edge cases such as null inputs, empty collections, maximum/minimum values, and unusual combinations of parameters.
     """,
 
-        "null_empty": """Generate unit tests for null and empty inputs for the following Java code:
+            TestCaseType.null_empty: """Generate unit tests for null and empty inputs for the following Java code:
 
     {code}
 
@@ -45,12 +55,4 @@ class Java8Prompt(PromptTemplate):
     8. Test scenarios with empty strings, collections, and maps where applicable.
     9. Use assertThrows to test for expected exceptions when null or empty inputs are not allowed.
     """
-    }
-
-    def get_prompt(self, code: str, testcase_type: str) -> str:
-        if testcase_type not in self.PROMPT_TEMPLATES:
-            return self.PROMPT_TEMPLATES["basic"].format(code=code)
-        return self.PROMPT_TEMPLATES[testcase_type].format(code=code)
-       
-    def get_valid_testcase_type(self) -> List[str]:
-        return [x for x in self.PROMPT_TEMPLATES]
+        }

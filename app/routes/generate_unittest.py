@@ -5,9 +5,16 @@ generate_unittest_bp = Blueprint('generate_unittest', __name__)
 
 @generate_unittest_bp.route('/generate_unittest', methods=['POST'])
 def generate_unittest():
-    java_code = request.json['java_code']
-    all_tests = model_manager.generate_unittest(java_code)
+    code = request.json['code']
+    all_tests = model_manager.generate_unittest(code)
     return jsonify({
         'unittest': all_tests,
-        'test_types': list(model_manager.PROMPT_TEMPLATES.keys())
+    })
+
+@generate_unittest_bp.route('/generate_basic_test', methods=['POST'])
+def generate_basic_test():
+    code = request.json['code']
+    basic_test = model_manager.generate_basic_test(code)
+    return jsonify({
+        'unittest': basic_test,
     })

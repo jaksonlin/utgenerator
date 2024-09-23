@@ -1,3 +1,10 @@
 flask
 transformers
 torch
+pydantic
+flask
+accelerate
+sentencepiece
+protobuf
+pytest
+python-dotenv

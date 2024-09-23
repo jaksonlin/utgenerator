@@ -2,14 +2,15 @@ from typing import List
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import re
-from ..prompts.prompt_template import PromptTemplate
+from ..prompts.prompt_manager import PromptManager
 
 class GenericModel:
-    prompt_template: PromptTemplate
 
-    def __init__(self, model_path: str, prompt_template: PromptTemplate):
+    prompt_manager: PromptManager
+
+    def __init__(self, model_path: str, prompt_manager: PromptManager):
         self.model_path = model_path
-        self.prompt_template = prompt_template
+        self.prompt_manager = prompt_manager
         self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto")
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         
@@ -23,7 +24,7 @@ class GenericModel:
         print(f"Max model length: {self.max_model_length}")
 
     def generate_test_case(self, code: str, testcase_type: str) -> List[str]:
-        messages = self.prompt_template.get_prompt_chat_message(code, testcase_type)
+        messages = self.prompt_manager.get_prompt_chat_message(code, testcase_type)
         text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         
         # Validate input size against model's max sequence length
@@ -45,7 +46,7 @@ class GenericModel:
         generated_tests = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
         
         # Process all generated sequences
-        extracted_codes = [self.prompt_template.extract_code(test) for test in generated_tests]
+        extracted_codes = [self.prompt_manager.extract_code(test) for test in generated_tests]
         
         # Return the first extracted code or all extracted codes based on your requirement
         return extracted_codes
