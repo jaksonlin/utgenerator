@@ -10,15 +10,11 @@ function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      tasks.forEach(task => {
-        if (task.status === 'processing' || task.status === 'queued') {
-          updateTaskStatus(task);
-        }
-      });
+      updateTaskStatuses();
       fetchQueueStatus();
-    }, 5000);
+    }, 30000); // 30 seconds interval (2 times per minute)
     return () => clearInterval(interval);
-  }, [tasks]);
+  }, []);
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -33,22 +29,29 @@ function App() {
     formData.append('file', file);
     try {
       const response = await axios.post(`${API_URL}/api/upload`, formData);
-      setTasks([...tasks, response.data]);
+      setTasks(prevTasks => [...prevTasks, response.data]);
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Upload failed. Please try again.');
     }
   };
 
-  const updateTaskStatus = async (task) => {
-    try {
-      const response = await axios.get(`${API_URL}/api/task/${task.task_id}`);
-      setTasks(tasks.map(t => 
-        t.task_id === task.task_id ? { ...t, ...response.data } : t
-      ));
-    } catch (error) {
-      console.error('Failed to update task status:', error);
-    }
+  const updateTaskStatuses = async () => {
+    const updatedTasks = await Promise.all(
+      tasks.map(async (task) => {
+        if (task.status === 'processing' || task.status === 'queued') {
+          try {
+            const response = await axios.get(`${API_URL}/api/task/${task.task_id}`);
+            return { ...task, ...response.data };
+          } catch (error) {
+            console.error('Failed to update task status:', error);
+            return task;
+          }
+        }
+        return task;
+      })
+    );
+    setTasks(updatedTasks);
   };
 
   const fetchQueueStatus = async () => {

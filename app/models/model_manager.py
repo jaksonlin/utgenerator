@@ -41,6 +41,12 @@ class ModelManager:
     def generate_basic_test(self, code: str) -> TestCase:
         extracted_code = self.model.generate_test_case(code, TestCaseType.basic)
         return TestCase(type=TestCaseType.basic, content=extracted_code)
-
     
-model_manager = ModelManager()
+    _model_manager = None
+
+    @staticmethod
+    def get_model_manager() -> "ModelManager":
+        if ModelManager._model_manager is None:
+            ModelManager._model_manager = ModelManager()
+        return ModelManager._model_manager
+
