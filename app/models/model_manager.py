@@ -1,22 +1,24 @@
 from typing import List
 from .generic_model import GenericModel
+from .deepseek import DeepseekModel
 from ..prompts import Java8Prompt, PromptManager
 from .model_result import TestCase
 from ..prompts.testcase_type import TestCaseType
 import os
+import pdb
 
 from dotenv import load_dotenv
 load_dotenv()
 
 class ModelManager:
     def __init__(self):
-        model_path = os.getenv("model_weight")
+        model_path = os.getenv("MODEL_PATH")
         if model_path is None or len(model_path) == 0:
-            raise ValueError("Model weight path is not set in the environment variables.")
+            raise ValueError("MODEL_PATH is not set in the environment variables.")
         
-        language = os.getenv("language")
+        language = os.getenv("LANGUAGE")
         if language is None or len(language) == 0:
-            raise ValueError("Language is not set in the environment variables.")
+            raise ValueError("LANGUAGE is not set in the environment variables.")
         
         self.language = language
         self.prompt_manager = self._create_prompt_manager(language)

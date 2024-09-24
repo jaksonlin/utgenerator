@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: utgenerator/frontend:latest
+    ports:
+      - "80:80"
+    environment:
+      - REACT_APP_API_URL=http://flask_app:5000
+    depends_on:
+      - flask_app
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+  flask_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: utgenerator/flask_app:latest
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - ${MODEL_PATH}:/app/models
+      - ${UPLOAD_FOLDER}:/app/uploads
+      - ${DOWNLOAD_FOLDER}:/app/downloads
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: utgenerator/celery_worker:latest
+    command: python celery_worker.py
+    env_file:
+      - .env
+    volumes:
+      - ${MODEL_PATH}:/app/models
+      - ${UPLOAD_FOLDER}:/app/uploads
+      - ${DOWNLOAD_FOLDER}:/app/downloads
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+networks:
+  default:
+    driver: overlay

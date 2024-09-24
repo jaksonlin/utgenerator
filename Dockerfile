@@ -1,7 +1,7 @@
 # Use an official Python runtime as a parent image
-FROM python:3.12.1-slim
+FROM python:3.9-slim
 
-# Set the working directory
+# Set the working directory in the container
 WORKDIR /app
 
 # Copy the current directory contents into the container at /app
@@ -13,8 +13,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Make port 5000 available to the world outside this container
 EXPOSE 5000
 
-# Define environment variable for Flask
-ENV FLASK_APP=app.main
+# Create a shell script to act as an entrypoint
+RUN echo '#!/bin/sh' > /entrypoint.sh && \
+    echo 'if [ "$CONTAINER_TYPE" = "celery" ]; then' >> /entrypoint.sh && \
+    echo '    python celery_worker.py' >> /entrypoint.sh && \
+    echo 'else' >> /entrypoint.sh && \
+    echo '    flask run --host=0.0.0.0' >> /entrypoint.sh && \
+    echo 'fi' >> /entrypoint.sh && \
+    chmod +x /entrypoint.sh
 
-# Run the Flask application when the container launches
-CMD ["flask", "run", "--host=0.0.0.0"]
+# Set the entrypoint script to be executed
+ENTRYPOINT ["/entrypoint.sh"]
