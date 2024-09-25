@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: utgenerator/frontend:latest
+    ports:
+      - "80:80"
+    networks:
+      - utgenerator-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+  flask_app:
+    image: utgenerator/flask_app:latest
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - ${MODEL_PATH}:${MODEL_PATH}
+      - ${UPLOAD_FOLDER}:${UPLOAD_FOLDER}
+      - ${DOWNLOAD_FOLDER}:${DOWNLOAD_FOLDER}
+    networks:
+      - utgenerator-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+  celery_worker:
+    image: utgenerator/celery_worker:latest
+    command: python celery_worker.py
+    env_file:
+      - .env
+    volumes:
+      - ${MODEL_PATH}:${MODEL_PATH}
+      - ${UPLOAD_FOLDER}:${UPLOAD_FOLDER}
+      - ${DOWNLOAD_FOLDER}:${DOWNLOAD_FOLDER}
+    networks:
+      - utgenerator-network
+    deploy:
+      replicas: 3
+      placement:
+        max_replicas_per_node: 1
+
+  redis:
+    image: "redis:latest"
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - utgenerator-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  utgenerator-network:
+    external: true

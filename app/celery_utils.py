@@ -1,29 +1,18 @@
 from celery import Celery
 import os
 
-def make_celery(app):
-    celery = Celery(
-        app.import_name,
-        backend=app.config['CELERY_RESULT_BACKEND'],
-        broker=app.config['CELERY_BROKER_URL']
-    )
-    celery.conf.update(app.config)
-    
-    TaskBase = celery.Task
-
-    class ContextTask(TaskBase):
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return TaskBase.__call__(self, *args, **kwargs)
-
-    celery.Task = ContextTask
-    return celery
+def get_redis_conn():
+    host = os.getenv("REDIS_HOST", 'redis')
+    port = os.getenv("REDIS_PORT", 6379)
+    db = os.getenv("REDIS_DB", 0)
+    return f"redis://{host}:{port}/{db}"
 
 def easy_celery():
+    redis_default = get_redis_conn()
     celery = Celery(
         'tasks',
-        backend=os.getenv('CELERY_RESULT_BACKEND','redis://localhost:6379/0'),
-        broker=os.getenv('CELERY_BROKER_URL','redis://localhost:6379/0'),
+        backend=os.getenv('CELERY_RESULT_BACKEND',redis_default),
+        broker=os.getenv('CELERY_BROKER_URL',redis_default),
     )
     celery.conf.update(
         task_default_queue='unittest_generation',
