@@ -48,7 +48,8 @@ def generate_unittest_task(file_path, task_id):
             code = file.read()
         model_manager = ModelManager.get_model_manager()
         all_tests = model_manager.generate_unittest(code)
-        output_path = os.path.join(os.getenv('DOWNLOAD_FOLDER'), f"{task_id}_unittest.py")
+        _, file_extension = os.path.splitext(file_path)
+        output_path = os.path.join(os.getenv('DOWNLOAD_FOLDER'), f"{task_id}_unittest{file_extension}")
         with open(output_path, 'w') as file:
             for test in all_tests:
                 file.write(test.model_dump_json() + '\n')
