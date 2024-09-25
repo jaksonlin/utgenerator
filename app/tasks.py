@@ -95,7 +95,7 @@ def generate_unittest_task_from_redis(task_id):
         file_extension = file_info[b'extension'].decode('utf-8')
         file_name = file_info[b'original_filename'].decode('utf-8')
         # write file for track
-        output_path = os.path.join(os.getenv('UPLOAD_FOLDER'), f"{task_id}_unittest{file_extension}")
+        output_path = os.path.join(os.getenv('UPLOAD_FOLDER'), f"{task_id}_{file_name}{file_extension}")
         with open(output_path, 'w') as file:
             file.write(str(file_content))
         
