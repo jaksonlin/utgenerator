@@ -2,9 +2,6 @@ version: '3.8'
 
 services:
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
     image: utgenerator/frontend:latest
     ports:
       - "80:80"
@@ -12,14 +9,9 @@ services:
       - REACT_APP_API_URL=http://flask_app:5000
     depends_on:
       - flask_app
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
+    restart: on-failure
+
   flask_app:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: utgenerator/flask_app:latest
     ports:
       - "5000:5000"
@@ -34,15 +26,14 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: utgenerator/celery_worker:latest
     command: python celery_worker.py
     env_file:
@@ -54,22 +45,18 @@ services:
     depends_on:
       - redis
     environment:
+      - CONTAINER_TYPE=celery
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
+    restart: on-failure
 
   redis:
     image: "redis:latest"
     ports:
       - "6379:6379"
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-
-networks:
-  default:
-    driver: overlay
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -24,6 +24,9 @@ def create_app():
 
     app.register_blueprint(generate_unittest_bp, url_prefix="/api")
     app.register_blueprint(task_management_bp, url_prefix="/api")
+    @app.route('/health', methods=['GET'])
+    def health_check():
+        return 'OK', 200
     return app
 
 
