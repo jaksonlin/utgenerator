@@ -1,12 +1,8 @@
-version: '3.8'
-
 services:
   frontend:
     image: utgenerator/frontend:latest
     ports:
       - "80:80"
-    environment:
-      - REACT_APP_API_URL=http://flask_app:5000
     depends_on:
       - flask_app
     restart: on-failure
@@ -18,9 +14,9 @@ services:
     env_file:
       - .env
     volumes:
-      - ${MODEL_PATH}:/app/models
-      - ${UPLOAD_FOLDER}:/app/uploads
-      - ${DOWNLOAD_FOLDER}:/app/downloads
+      - ${MODEL_PATH}:${MODEL_PATH}
+      - ${UPLOAD_FOLDER}:${UPLOAD_FOLDER}
+      - ${DOWNLOAD_FOLDER}:${DOWNLOAD_FOLDER}
     depends_on:
       - redis
     environment:
@@ -39,9 +35,9 @@ services:
     env_file:
       - .env
     volumes:
-      - ${MODEL_PATH}:/app/models
-      - ${UPLOAD_FOLDER}:/app/uploads
-      - ${DOWNLOAD_FOLDER}:/app/downloads
+      - ${MODEL_PATH}:${MODEL_PATH}
+      - ${UPLOAD_FOLDER}:${UPLOAD_FOLDER}
+      - ${DOWNLOAD_FOLDER}:${DOWNLOAD_FOLDER}
     depends_on:
       - redis
     environment:
