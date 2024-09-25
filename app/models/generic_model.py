@@ -11,9 +11,11 @@ class GenericModel:
     def __init__(self, model_path: str, prompt_manager: PromptManager):
         self.model_path = model_path
         self.prompt_manager = prompt_manager
-        self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        
+        self.load_model()
+
+    def load_model(self):
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_path, device_map="auto",  trust_remote_code=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         # Set pad token
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token

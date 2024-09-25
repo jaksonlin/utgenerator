@@ -1,0 +1,58 @@
+services:
+  frontend:
+    image: utgenerator/frontend:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - flask_app
+    restart: on-failure
+
+  flask_app:
+    image: utgenerator/flask_app:latest
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - ${MODEL_PATH}:${MODEL_PATH}
+      - ${UPLOAD_FOLDER}:${UPLOAD_FOLDER}
+      - ${DOWNLOAD_FOLDER}:${DOWNLOAD_FOLDER}
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  celery_worker:
+    image: utgenerator/celery_worker:latest
+    command: python celery_worker.py
+    env_file:
+      - .env
+    volumes:
+      - ${MODEL_PATH}:${MODEL_PATH}
+      - ${UPLOAD_FOLDER}:${UPLOAD_FOLDER}
+      - ${DOWNLOAD_FOLDER}:${DOWNLOAD_FOLDER}
+    depends_on:
+      - redis
+    environment:
+      - CONTAINER_TYPE=celery
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    restart: on-failure
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
