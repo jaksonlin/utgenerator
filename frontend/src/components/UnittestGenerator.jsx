@@ -109,6 +109,7 @@ function UnittestGenerator() {
   useEffect(() => {
     const interval = setInterval(() => {
       updateTaskStatuses();
+      fetchQueueStatus();
     }, 3000);
     return () => clearInterval(interval);
   }, [updateTaskStatuses]);
