@@ -31,3 +31,8 @@ export const getQueueStatus = async () => {
 export const downloadFile = (taskId) => {
   return `${API_URL}/download/${taskId}`;
 };
+
+export const getHistoricalRequet = async (page, page_size=10) =>{
+  const response = await axios.get(`/tasks?page=${page}&per_page=${page_size}`);
+  return response.data;
+}

@@ -1,45 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Typography, 
-  Button, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  Paper, 
-  Box,
-  CircularProgress,
-  Snackbar,
-  Alert,
-  Chip
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { Typography, Paper, Box, Snackbar, Alert } from '@mui/material';
 import { uploadFile, getTaskStatus, getQueueStatus, downloadFile } from '../services/api';
-
-const Input = styled('input')({
-  display: 'none',
-});
-
-// Define task status constants
-const TASK_QUEUED = "0";
-const TASK_RUN = "1";
-const TASK_SUCC = "2";
-const TASK_FAIL = "3";
-
-function getStatusText(status) {
-  switch (status) {
-    case TASK_QUEUED:
-      return 'Queued';
-    case TASK_RUN:
-      return 'Running';
-    case TASK_SUCC:
-      return 'Completed';
-    case TASK_FAIL:
-      return 'Failed';
-    default:
-      return 'Unknown';
-  }
-}
+import FileUpload from './FileUpload';
+import TaskStatus from './TaskStatus';
+import QueueStatus from './QueueStatus';
+import { TASK_QUEUED, TASK_RUN, TASK_SUCC, TASK_FAIL , getStatusText} from './taskConstants';
 
 function UnittestGenerator() {
   const [tasks, setTasks] = useState([]);
@@ -144,64 +109,21 @@ function UnittestGenerator() {
         Unittest Generator
       </Typography>
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <Input
-          accept=".java,.py,.js,.ts"
-          id="contained-button-file"
-          type="file"
-          onChange={handleFileChange}
+        <FileUpload 
+          file={file} 
+          isUploading={isUploading} 
+          handleFileChange={handleFileChange} 
+          handleUpload={handleUpload} 
         />
-        <label htmlFor="contained-button-file">
-          <Button
-            variant="contained"
-            component="span"
-            startIcon={<CloudUploadIcon />}
-            sx={{ mr: 2 }}
-          >
-            Select File
-          </Button>
-        </label>
-        <Button
-          onClick={handleUpload}
-          variant="contained"
-          color="primary"
-          disabled={!file || isUploading}
-        >
-          {isUploading ? <CircularProgress size={24} /> : 'Upload'}
-        </Button>
-        {file && <Typography variant="body2" sx={{ mt: 2 }}>Selected file: {file.name}</Typography>}
       </Paper>
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h5" component="h2" gutterBottom>
           Tasks
         </Typography>
-        <List>
-          {Array.isArray(tasks) && tasks.map(task => (
-            <ListItem key={task.task_id}>
-              <ListItemText
-                primary={`Task ID: ${task.task_id}`}
-                secondary={`Status: ${getStatusText(task.status)}, Filename: ${task.filename}`}
-              />
-              {task.status === TASK_SUCC && (
-                <Button 
-                  variant="outlined" 
-                  onClick={() => handleDownload(task.task_id)}
-                >
-                  Download
-                </Button>
-              )}
-            </ListItem>
-          ))}
-        </List>
+        <TaskStatus tasks={tasks} handleDownload={handleDownload} />
       </Paper>
       <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Queue Status
-        </Typography>
-        <Typography variant="body1">Total Tasks: {queueStatus.total_tasks}</Typography>
-        <Typography variant="body1">Active Tasks: {queueStatus.active_tasks}</Typography>
-        <Typography variant="body1">Queued Tasks: {queueStatus.queued_tasks}</Typography>
-        <Typography variant="body1">Completed Tasks: {queueStatus.completed_tasks}</Typography>
-        <Typography variant="body1">Failed Tasks: {queueStatus.failed_tasks}</Typography>
+        <QueueStatus queueStatus={queueStatus} />
       </Paper>
       <Snackbar 
         open={snackbar.open} 
