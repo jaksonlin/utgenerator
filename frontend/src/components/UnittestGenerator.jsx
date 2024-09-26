@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Typography, 
   Button, 
@@ -16,16 +16,15 @@ import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { uploadFile, getTaskStatus, getQueueStatus, downloadFile } from '../services/api';
 
-
 const Input = styled('input')({
   display: 'none',
 });
 
 // Define task status constants
-const TASK_QUEUED = 0;
-const TASK_RUN = 1;
-const TASK_SUCC = 2;
-const TASK_FAIL = 3;
+const TASK_QUEUED = "0";
+const TASK_RUN = "1";
+const TASK_SUCC = "2";
+const TASK_FAIL = "3";
 
 function getStatusText(status) {
   switch (status) {
@@ -42,9 +41,9 @@ function getStatusText(status) {
   }
 }
 
-
 function UnittestGenerator() {
   const [tasks, setTasks] = useState([]);
+  const tasksRef = useRef(tasks);
   const [file, setFile] = useState(null);
   const [queueStatus, setQueueStatus] = useState({
       'total_tasks': 0,
@@ -56,14 +55,9 @@ function UnittestGenerator() {
   const [isUploading, setIsUploading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      updateTaskStatuses();
-      fetchQueueStatus();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -77,7 +71,11 @@ function UnittestGenerator() {
     setIsUploading(true);
     try {
       const response = await uploadFile(file);
-      setTasks(prevTasks => [...prevTasks, response]);
+      setTasks(prevTasks => {
+        const newTasks = [...prevTasks, response];
+        tasksRef.current = newTasks; // Update the ref
+        return newTasks;
+      });
       setSnackbar({ open: true, message: 'File uploaded successfully!', severity: 'success' });
     } catch (error) {
       console.error('Upload failed:', error);
@@ -87,25 +85,33 @@ function UnittestGenerator() {
     }
   };
 
-  const updateTaskStatuses = async () => {
+  const updateTaskStatuses = useCallback(async () => {
+    const currentTasks = tasksRef.current;
     const updatedTasks = await Promise.all(
-      tasks.map(async (task) => {
-        if (task.status === 0 || task.status === 1) {
+      currentTasks.map(async (task) => {
+        if (task.status === TASK_QUEUED || task.status === TASK_RUN) {
           try {
             const response = await getTaskStatus(task.task_id);
-            const result = { ...task, ...response };
-            console.log(result)
-            return result;
+            return { ...task, ...response };
           } catch (error) {
-            console.error('Failed to update task status:', error);
+            console.error(`Failed to update status for task ${task.task_id}:`, error);
             return task;
           }
         }
         return task;
       })
     );
+
     setTasks(updatedTasks);
-  };
+    tasksRef.current = updatedTasks; // Update the ref
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      updateTaskStatuses();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [updateTaskStatuses]);
 
   const fetchQueueStatus = async () => {
     try {
@@ -168,13 +174,13 @@ function UnittestGenerator() {
           Tasks
         </Typography>
         <List>
-          {tasks.map(task => (
+          {Array.isArray(tasks) && tasks.map(task => (
             <ListItem key={task.task_id}>
               <ListItemText
                 primary={`Task ID: ${task.task_id}`}
-                secondary={`Status: ${getStatusText(parseInt(task.status))}, Filename: ${task.filename}`}
+                secondary={`Status: ${getStatusText(task.status)}, Filename: ${task.filename}`}
               />
-              {parseInt(task.status) === TASK_SUCC && (
+              {task.status === TASK_SUCC && (
                 <Button 
                   variant="outlined" 
                   onClick={() => handleDownload(task.task_id)}

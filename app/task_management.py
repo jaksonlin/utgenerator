@@ -4,7 +4,7 @@ import io
 from flask import Blueprint, request, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
 from .tasks import hello_world_task, generate_unittest_task_from_redis
-from .redis_svc import get_current_task_status, add_task_to_redis, get_task_result, get_tasks_by_page, get_task_status
+from .redis_svc import task_service
 from .task_status import *
 
 task_management_bp = Blueprint('task_management', __name__)
@@ -31,18 +31,18 @@ def upload_file():
     
     filename = secure_filename(file.filename)
     file_content = file.read().decode('utf-8')
-    task = add_task_to_redis(filename=filename, file_content=file_content)
+    task = task_service.add_task_to_redis(filename=filename, file_content=file_content)
     generate_unittest_task_from_redis.delay(task['task_id'])
     return jsonify(task), 202
     
 @task_management_bp.route('/task/<task_id>', methods=['GET'])
 def get_task_status(task_id):
-    task = get_task_status(task_id=task_id)
+    task = task_service.get_task_status_by_id(task_id=task_id)
     return jsonify(task), 200
 
 @task_management_bp.route('/download/<task_id>', methods=['GET'])
 def download_file(task_id):
-    filename, file_content= get_task_result(task_id)
+    filename, file_content= task_service.get_task_result(task_id)
     if not filename:
         return jsonify({'error': 'File not found'}), 404
     return send_file(
@@ -56,14 +56,14 @@ def download_file(task_id):
 def get_tasks():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
-    tasks_data = get_tasks_by_page(page, per_page)
+    tasks_data = task_service.get_tasks_by_page(page, per_page)
     return jsonify(tasks_data), 200
 
 @task_management_bp.route('/queue_status', methods=['GET'])
 def queue_status():
     try:
         # Get status counts
-        status_counts = get_current_task_status()
+        status_counts = task_service.get_current_task_status()
         total = sum(status_counts.values())
         
         return jsonify({
