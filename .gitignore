@@ -1,3 +1,4 @@
 .utgen
 **/__pycache__
 *.out
+frontend/.vite/deps*
